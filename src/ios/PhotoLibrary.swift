@@ -92,6 +92,47 @@ import Foundation
             
         }
     }
+
+    
+    func getMoments(_ command: CDVInvokedUrlCommand) {
+        concurrentQueue.async {
+            
+            if !PhotoLibraryService.hasPermission() {
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: PhotoLibraryService.PERMISSION_ERROR)
+                self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                return
+            }
+            
+            let service = PhotoLibraryService.instance
+            let options = command.arguments[0] as! NSDictionary
+            let from = options["from"] as? String
+            let to = options["to"] as? String
+
+            let dateFmt = DateFormatter()
+            dateFmt.dateFormat = "yyyy-MM-dd"
+            var fromDate : Date? = nil
+            var toDate : Date? = nil
+
+            let dateFmt = DateFormatter()
+            dateFmt.dateFormat = "yyyy-MM-dd"
+            var fromDate : Date? = nil
+            var toDate : Date? = nil
+
+            if from != nil {
+                let i = from!.index(from!.startIndex, offsetBy: 10, limitedBy: from!.endIndex)
+                fromDate = dateFmt.date(from: from!.substring(to: i!))
+            }
+            if to != nil {
+                let i = to!.index(to!.startIndex, offsetBy: 10, limitedBy: to!.endIndex)
+                toDate = dateFmt.date(from: (to?.substring(to: i!))!)
+            }
+            let albums = service.getMoments(fromDate:fromDate, toDate:toDate)
+            
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: albums)
+            self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+            
+        }
+    }    
     
     
     func isAuthorized(_ command: CDVInvokedUrlCommand) {

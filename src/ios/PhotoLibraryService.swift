@@ -26,6 +26,56 @@ extension PHAsset {
 
 }
 
+// see: https://github.com/terikon/cordova-plugin-photo-library/issues/146
+extension UIImage {
+    
+    func fixedOrientation() -> UIImage {
+        if imageOrientation == .up {
+            return self
+        }
+        var transform: CGAffineTransform = CGAffineTransform.identity
+        switch imageOrientation {
+        case .down, .downMirrored:
+            transform = transform.translatedBy(x: size.width, y: size.height)
+            transform = transform.rotated(by: CGFloat(Double.pi ))
+            break
+        case .left, .leftMirrored:
+            transform = transform.translatedBy(x: size.width, y: 0)
+            transform = transform.rotated(by: CGFloat(Double.pi / 2))
+            break
+        case .right, .rightMirrored:
+            transform = transform.translatedBy(x: 0, y: size.height)
+            transform = transform.rotated(by: CGFloat(-Double.pi / 2))
+            break
+        case .up, .upMirrored:
+            break
+        }
+        switch imageOrientation {
+        case .upMirrored, .downMirrored:
+            transform.translatedBy(x: size.width, y: 0)
+            transform.scaledBy(x: -1, y: 1)
+            break
+        case .leftMirrored, .rightMirrored:
+            transform.translatedBy(x: size.height, y: 0)
+            transform.scaledBy(x: -1, y: 1)
+        case .up, .down, .left, .right:
+            break
+        }
+        let ctx: CGContext = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: self.cgImage!.bitsPerComponent, bytesPerRow: 0, space: (self.cgImage?.colorSpace)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.concatenate(transform)
+        switch imageOrientation {
+        case .left, .leftMirrored, .right, .rightMirrored:
+            ctx.draw(self.cgImage!, in: CGRect(x: 0, y: 0, width: size.height, height: size.width))
+            break
+        default:
+            ctx.draw(self.cgImage!, in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+            break
+        }
+        let cgImage: CGImage = ctx.makeImage()!
+        return UIImage(cgImage: cgImage)
+    }
+}
+
 final class PhotoLibraryService {
 
     let fetchOptions: PHFetchOptions!
@@ -263,7 +313,16 @@ final class PhotoLibraryService {
         if let location = asset.location {
             libraryItem["latitude"] = location.coordinate.latitude
             libraryItem["longitude"] = location.coordinate.longitude
+            // extras
+            libraryItem["speed"] = location.speed
         }
+
+        // extras
+        libraryItem["isFavorite"] = asset.isFavorite
+        libraryItem["burstIdentifier"] = asset.burstIdentifier
+        libraryItem["representsBurst"] = asset.representsBurst
+        libraryItem["duration"] = asset.duration
+
         
         
         if includeAlbumData {
@@ -305,6 +364,65 @@ final class PhotoLibraryService {
         return result;
         
     }
+
+    func getMoments(fromDate: Date? = nil, toDate: Date? = nil) -> [NSDictionary] {
+        
+        var result = [NSDictionary]()
+        
+        for assetCollectionType in [PHAssetCollectionType.moment] {
+
+            let fetchResult = PHAssetCollection.fetchAssetCollections(with: assetCollectionType, subtype: .any, options: nil)
+            
+            fetchResult.enumerateObjects({ (assetCollection: PHAssetCollection, index, stop) in
+                let albumItem = NSMutableDictionary()
+                // filter by date range
+
+                // filter by date range
+                if fromDate != nil {
+                    guard let startDate = assetCollection.startDate, fromDate!.compare(startDate) != ComparisonResult.orderedDescending
+                        else {
+                            return
+                    }
+                }
+                if toDate != nil {
+                    guard let endDate = assetCollection.endDate, toDate!.compare(endDate) != ComparisonResult.orderedAscending
+                        else {
+                            return
+                    }
+                }
+
+                guard assetCollection.localizedLocationNames.count > 0 else {
+                    return
+                }    
+                                
+                albumItem["id"] = assetCollection.localIdentifier
+                albumItem["title"] = assetCollection.localizedTitle
+
+                // additions
+                albumItem["location"] = assetCollection.localizedLocationNames.joined(separator: ", ")
+                albumItem["startDate"] = self.dateFormatter.string(from: assetCollection.startDate!)
+                albumItem["endDate"] = self.dateFormatter.string(from: assetCollection.endDate!)
+
+
+                // get PHAsset ids in moment
+                var assetIds = [String]()            
+                let assetOptions = PHFetchOptions()
+                assetOptions.sortDescriptors = [ NSSortDescriptor(key: "creationDate", ascending: false) ]
+                let assets = PHAsset.fetchAssets(in: assetCollection, options: assetOptions)
+                assets.enumerateObjects({ (asset: PHAsset, index, stop) in
+                    assetIds.append(asset.localIdentifier)
+                })
+                albumItem["itemIds"] = assetIds
+
+                result.append(albumItem)
+                
+            });
+            
+        }
+        
+        return result;
+        
+    }
     
     func getThumbnail(_ photoId: String, thumbnailWidth: Int, thumbnailHeight: Int, quality: Float, completion: @escaping (_ result: PictureData?) -> Void) {
 
@@ -337,29 +455,24 @@ final class PhotoLibraryService {
     }
 
     func getPhoto(_ photoId: String, completion: @escaping (_ result: PictureData?) -> Void) {
-
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: self.fetchOptions)
-
         if fetchResult.count == 0 {
             completion(nil)
             return
         }
-
         fetchResult.enumerateObjects({
             (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-
-            let asset = obj as! PHAsset
             
+            let asset = obj as! PHAsset    
             PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
                 (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
-
+                
                 guard let image = imageData != nil ? UIImage(data: imageData!) : nil else {
                     completion(nil)
                     return
                 }
-
-                let imageData = PhotoLibraryService.image2PictureData(image, quality: 1.0)
-
+                
+                let imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: 1.0)
                 completion(imageData)
             }
         })

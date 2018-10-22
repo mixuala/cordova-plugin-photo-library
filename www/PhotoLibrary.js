@@ -85,6 +85,23 @@ photoLibrary.getAlbums = function (success, error) {
 
 };
 
+photoLibrary.getMoments = function (success, error, options) {
+
+  if (!options) {
+    options = {};
+  }
+
+  cordova.exec(
+    function (result) {
+      success(result);
+    },
+    error,
+    'PhotoLibrary',
+    'getMoments', [options]
+  );
+
+};
+
 photoLibrary.isAuthorized = function (success, error) {
 
   cordova.exec(

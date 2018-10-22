@@ -7,6 +7,7 @@ declare module PhotoLibraryCordova {
     requestAuthorization(success: () => void, error: (err: any) => void, options?: RequestAuthorizationOptions): void;
 
     getAlbums(success: (result: AlbumItem[]) => void, error: (err:any) => void): void;
+    getMoments(success: (result: AlbumItem[]) => void, error: (err:any) => void, options?:GetMomentsOptions): void;
     isAuthorized(success: (result: boolean) => void, error: (err:any) => void): void;
 
     getThumbnailURL(photoId: string, success: (result: string) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
@@ -45,11 +46,22 @@ declare module PhotoLibraryCordova {
     latitude?: number;
     longitude?: number;
     albumIds?: string[];
+    // extras
+    speed?: number;
+    isFavorite?: boolean;
+    burstIdentifier: string;
+    representsBurst: boolean;
+    duration: number;
   }
 
   export interface AlbumItem {
     id: string;
     title: string;
+    // extras
+    location?: string;
+    startDate?: Date;
+    endDate?: Date;
+    itemIds: string[];
   }
 
   export interface GetLibraryOptions {
@@ -63,6 +75,12 @@ declare module PhotoLibraryCordova {
     includeAlbumData?: boolean;
     includeCloudData?: boolean;
     includeVideos?: boolean;
+  }
+
+  export interface GetMomentsOptions {
+    // date string, e.g. "2108-01-01"
+    from: string;
+    to: string
   }
 
   export interface RequestAuthorizationOptions {
