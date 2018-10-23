@@ -20,8 +20,8 @@ declare module PhotoLibraryCordova {
     getPhotoURL(photoId: string, options?: GetPhotoOptions): string; // Will not work in browser
     getPhotoURL(libraryItem: LibraryItem, options?: GetPhotoOptions): string; // Will not work in browser
 
-    getThumbnail(photoId: string, success: (result: Blob) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
-    getThumbnail(libraryItem: LibraryItem, success: (result: Blob) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
+    getThumbnail(photoId: string, success: (data: Blob|string, mimeType?:string) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
+    getThumbnail(libraryItem: LibraryItem, success: (data: Blob|string, mimeType?:string) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
 
     getPhoto(photoId: string, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
     getPhoto(libraryItem: LibraryItem, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
@@ -92,6 +92,7 @@ declare module PhotoLibraryCordova {
     thumbnailWidth?: number;
     thumbnailHeight?: number;
     quality?: number;
+    dataURL?: boolean;
   }
 
   export interface GetPhotoOptions {

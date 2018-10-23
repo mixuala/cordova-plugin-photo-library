@@ -424,7 +424,7 @@ final class PhotoLibraryService {
         
     }
     
-    func getThumbnail(_ photoId: String, thumbnailWidth: Int, thumbnailHeight: Int, quality: Float, completion: @escaping (_ result: PictureData?) -> Void) {
+    func getThumbnail(_ photoId: String, thumbnailWidth: Int, thumbnailHeight: Int, quality: Float, dataURL:Bool, completion: @escaping (_ result: PictureData?) -> Void) {
 
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: self.fetchOptions)
 
@@ -446,8 +446,11 @@ final class PhotoLibraryService {
                     return
                 }
 
-                let imageData = PhotoLibraryService.image2PictureData(image, quality: quality)
-
+                var imageData = PhotoLibraryService.image2PictureData(image, quality: quality)
+                // if dataURL {
+                //     let base64data = imageData!.data?.base64EncodedString(options: .lineLength64Characters)
+                //     imageData = PictureData(data: imageData!.data, dataURL: base64data, mimeType: imageData!.mimeType)
+                // }
                 completion(imageData)
             }
         })
@@ -559,6 +562,7 @@ final class PhotoLibraryService {
                 do {
                     let video_data = try Data(contentsOf: url)
                     let pic_data = PictureData(data: video_data, mimeType: "video/quicktime") // TODO: get mime from info dic ?
+                    // let pic_data = PictureData(data: video_data, dataURL:nil, mimeType: "video/quicktime") // TODO: get mime from info dic ?
                     completion(pic_data)
                 }
                 catch _ {
@@ -747,6 +751,8 @@ final class PhotoLibraryService {
 
     struct PictureData {
         var data: Data
+        // var data: Data? = nil
+        // var dataURL: String? = nil
         var mimeType: String
     }
     
@@ -835,6 +841,7 @@ final class PhotoLibraryService {
 
         if data != nil && mimeType != nil {
             return PictureData(data: data!, mimeType: mimeType!)
+            // return PictureData(data: data!, dataURL:nil, mimeType: mimeType!)
         }
         return nil
     }

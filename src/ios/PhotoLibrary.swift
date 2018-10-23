@@ -113,11 +113,6 @@ import Foundation
             var fromDate : Date? = nil
             var toDate : Date? = nil
 
-            let dateFmt = DateFormatter()
-            dateFmt.dateFormat = "yyyy-MM-dd"
-            var fromDate : Date? = nil
-            var toDate : Date? = nil
-
             if from != nil {
                 let i = from!.index(from!.startIndex, offsetBy: 10, limitedBy: from!.endIndex)
                 fromDate = dateFmt.date(from: from!.substring(to: i!))
@@ -159,12 +154,14 @@ import Foundation
             let thumbnailWidth = options["thumbnailWidth"] as! Int
             let thumbnailHeight = options["thumbnailHeight"] as! Int
             let quality = options["quality"] as! Float
+            let dataURL = options["dataURL"] as! Bool
 
-            service.getThumbnail(photoId, thumbnailWidth: thumbnailWidth, thumbnailHeight: thumbnailHeight, quality: quality) { (imageData) in
+            service.getThumbnail(photoId, thumbnailWidth: thumbnailWidth, thumbnailHeight: thumbnailHeight, quality: quality, dataURL: dataURL) { (imageData) in
 
                 let pluginResult = imageData != nil ?
                     CDVPluginResult(
                         status: CDVCommandStatus_OK,
+                        // messageAsMultipart: [imageData!.data ?? [], imageData!.dataURL ?? "", imageData!.mimeType]),
                         messageAsMultipart: [imageData!.data, imageData!.mimeType])
                     :
                     CDVPluginResult(

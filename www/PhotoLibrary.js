@@ -185,8 +185,18 @@ photoLibrary.getThumbnail = function (photoIdOrLibraryItem, success, error, opti
 
   cordova.exec(
     function (data, mimeType) {
+      if (options.dataURL){
+        // var dataURL = 'data:'+mimeType+';base64,'+base64;
+        /**
+         * NOTE: not sure which is faster, convert in `ios` or here in `js`, 
+         * but I don't know how to return ArrayBuffer | String through Swift
+         */ 
+        // var dataURL = 'data:'+mimeType+';base64,'+btoa(String.fromCharCode(...new Uint8Array(data)));
+        var base64string = btoa(new Uint8Array(data).reduce((res,byte)=>(res.push(String.fromCharCode(byte)),res),[]).join(''));
+        return success(['data:', mimeType, ';base64,', base64string].join(''), mimeType);
+      }
       var blob = dataAndMimeTypeToBlob(data, mimeType);
-      success(blob);
+      success(blob, mimeType);
     },
     error,
     'PhotoLibrary',
@@ -312,6 +322,7 @@ var getThumbnailOptionsWithDefaults = function (options) {
     thumbnailWidth: options.thumbnailWidth || defaultThumbnailWidth,
     thumbnailHeight: options.thumbnailHeight || defaultThumbnailHeight,
     quality: options.quality || defaultQuality,
+    dataURL: options.dataURL || false,
   };
 
   return options;
