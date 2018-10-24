@@ -265,6 +265,19 @@ final class PhotoLibraryService {
                         completion(nil)
                     }
                     else {
+                        // https://stackoverflow.com/questions/45277034/get-exif-metadata-in-of-captured-image-in-swift3
+                        let imageNSData: NSData = imageData! as NSData
+                        if let imageSource = CGImageSourceCreateWithData(imageNSData, nil) {
+                            let metadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil)! as NSDictionary
+                            libraryItem["orientation"] = metadata["Orientation"]
+                            libraryItem["{Exif}"] = metadata["{Exif}"]
+                            libraryItem["{GPS}"] = metadata["{GPS}"]
+                            libraryItem["{TIFF}"] = metadata["{TIFF}"]
+                            // print("metadata: ", libraryItem)
+                        }
+                        
+
+
                         let file_url:URL = info!["PHImageFileURLKey"] as! URL
 //                        let mime_type = self.mimeTypes[file_url.pathExtension.lowercased()]!
                         completion(file_url.relativePath)
