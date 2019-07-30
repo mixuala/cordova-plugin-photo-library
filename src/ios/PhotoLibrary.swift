@@ -155,7 +155,8 @@ import Foundation
             let options = command.arguments[1] as! NSDictionary
             let thumbnailWidth = options["thumbnailWidth"] as! Int
             let thumbnailHeight = options["thumbnailHeight"] as! Int
-            let quality = options["quality"] as! Float
+            let n = options["quality"] as! NSNumber
+            let quality = n.floatValue>1.0 ? Float(n)/100 : Float(n)
             let dataURL = options["dataURL"] as! Bool
 
             service.getThumbnail(photoId, thumbnailWidth: thumbnailWidth, thumbnailHeight: thumbnailHeight, quality: quality, dataURL: dataURL) { (imageData) in

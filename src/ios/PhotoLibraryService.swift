@@ -184,8 +184,15 @@ final class PhotoLibraryService {
             fetchOptions.fetchLimit = options.maxItems;
         }
 
+        /**
+         * TODO: add fetch by dateRange, fetch by most_recent, and skip n records
+         */
         
         let fetchResult = PHAsset.fetchAssets(with: fetchOptions)
+
+        /**
+         * TODO: add PHAsset.fetchAssetsByIds to get LibraryItems from an Album
+         */
 
 
         
@@ -244,7 +251,7 @@ final class PhotoLibraryService {
     }
     
     
-    func getCompleteInfo(_ libraryItem: NSDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
+    func getCompleteInfo(_ libraryItem: NSMutableDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
         
         
         let ident = libraryItem.object(forKey: "id") as! String
@@ -417,7 +424,7 @@ final class PhotoLibraryService {
                 albumItem["title"] = assetCollection.localizedTitle
 
                 // additions
-                albumItem["location"] = assetCollection.localizedLocationNames.joined(separator: ", ")
+                albumItem["locations"] = assetCollection.localizedLocationNames.joined(separator: ", ")
                 albumItem["startDate"] = self.dateFormatter.string(from: assetCollection.startDate!)
                 albumItem["endDate"] = self.dateFormatter.string(from: assetCollection.endDate!)
 
@@ -441,6 +448,44 @@ final class PhotoLibraryService {
         return result;
         
     }
+
+    // // https://stackoverflow.com/questions/32041420/cropping-image-with-swift-and-put-it-on-center-position
+    // // TODO: width/height must be adjusted for Orientation
+    // // currently using: contentMode = PHImageContentMode.aspectFill 
+    // func centerCropToBounds(image: UIImage, width: Double, height: Double) -> UIImage {
+
+    //     let contextImage: UIImage = UIImage(cgImage: image.cgImage!)
+
+    //     let contextSize: CGSize = contextImage.size
+
+    //     var posX: CGFloat = 0.0
+    //     var posY: CGFloat = 0.0
+    //     var cgwidth: CGFloat = CGFloat(width)
+    //     var cgheight: CGFloat = CGFloat(height)
+
+    //     // See what size is longer and create the center off of that
+    //     if contextSize.width > contextSize.height {
+    //         posX = ((contextSize.width - contextSize.height) / 2)
+    //         posY = 0
+    //         cgwidth = contextSize.height
+    //         cgheight = contextSize.height
+    //     } else {
+    //         posX = 0
+    //         posY = ((contextSize.height - contextSize.width) / 2)
+    //         cgwidth = contextSize.width
+    //         cgheight = contextSize.width
+    //     }
+
+    //     let rect: CGRect = CGRectMake(posX, posY, cgwidth, cgheight)
+
+    //     // Create bitmap image from context using the rect
+    //     let imageRef: CGImageRef = CGImageCreateWithImageInRect(contextImage.CGImage, rect)
+
+    //     // Create a new image based on the imageRef and rotate back to the original orientation
+    //     let image: UIImage = UIImage(CGImage: imageRef, scale: image.scale, orientation: image.imageOrientation)!
+
+    //     return image
+    // }
     
     func getThumbnail(_ photoId: String, thumbnailWidth: Int, thumbnailHeight: Int, quality: Float, dataURL:Bool, completion: @escaping (_ result: PictureData?) -> Void) {
 
@@ -456,15 +501,25 @@ final class PhotoLibraryService {
 
             let asset = obj as! PHAsset
 
+            /*
+             * targetSize and options.normalizedCropRect, or scale in js and provide exact size.  
+             * TODO: check if 80x80 square targetSize crops from middle or topLeft
+             *  https://developer.apple.com/documentation/photokit/phimagerequestoptionsresizemode
+             *  https://developer.apple.com/documentation/photokit/phimagerequestoptions/1616952-normalizedcroprect
+             *  https://stackoverflow.com/questions/32041420/cropping-image-with-swift-and-put-it-on-center-position
+            */
+
             self.cachingImageManager.requestImage(for: asset, targetSize: CGSize(width: thumbnailWidth, height: thumbnailHeight), contentMode: self.contentMode, options: self.thumbnailRequestOptions) {
                 (image: UIImage?, imageInfo: [AnyHashable: Any]?) in
 
+                // TODO: confirm auto-rotate is working properly
                 guard let image = image else {
                     completion(nil)
                     return
                 }
 
-                var imageData = PhotoLibraryService.image2PictureData(image, quality: quality)
+                //TODO: may need to adjust targetSize BEFORE calling fixedOrientation()
+                var imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality)
                 // if dataURL {
                 //     let base64data = imageData!.data?.base64EncodedString(options: .lineLength64Characters)
                 //     imageData = PictureData(data: imageData!.data, dataURL: base64data, mimeType: imageData!.mimeType)
@@ -791,7 +846,7 @@ final class PhotoLibraryService {
             guard let match = self.dataURLPattern.firstMatch(in: url, options: NSRegularExpression.MatchingOptions(rawValue: 0), range: NSMakeRange(0, url.characters.count)) else { // TODO: firstMatchInString seems to be slow for unknown reason
                 throw PhotoLibraryError.error(description: "The dataURL could not be parsed")
             }
-            let dataPos = match.rangeAt(0).length
+            let dataPos = match.range(at:0).length
             let base64 = (url as NSString).substring(from: dataPos)
             guard let decoded = Data(base64Encoded: base64, options: NSData.Base64DecodingOptions(rawValue: 0)) else {
                 throw PhotoLibraryError.error(description: "The dataURL could not be decoded")
@@ -854,7 +909,7 @@ final class PhotoLibraryService {
             mimeType = data != nil ? "image/png" : nil
         } else {
             data = UIImageJPEGRepresentation(image, CGFloat(quality))
-            mimeType = data != nil ? "image/jpeg" : nil
+            mimeType = data != nil ? "image/jpeg" : nil        
         }
 
         if data != nil && mimeType != nil {
