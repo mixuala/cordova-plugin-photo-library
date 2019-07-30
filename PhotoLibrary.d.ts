@@ -7,6 +7,7 @@ declare module PhotoLibraryCordova {
     requestAuthorization(success: () => void, error: (err: any) => void, options?: RequestAuthorizationOptions): void;
 
     getAlbums(success: (result: AlbumItem[]) => void, error: (err:any) => void): void;
+    getMoments(success: (result: AlbumItem[]) => void, error: (err:any) => void, options?:GetMomentsOptions): void;
     isAuthorized(success: (result: boolean) => void, error: (err:any) => void): void;
 
     getThumbnailURL(photoId: string, success: (result: string) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
@@ -19,8 +20,8 @@ declare module PhotoLibraryCordova {
     getPhotoURL(photoId: string, options?: GetPhotoOptions): string; // Will not work in browser
     getPhotoURL(libraryItem: LibraryItem, options?: GetPhotoOptions): string; // Will not work in browser
 
-    getThumbnail(photoId: string, success: (result: Blob) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
-    getThumbnail(libraryItem: LibraryItem, success: (result: Blob) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
+    getThumbnail(photoId: string, success: (data: Blob|string, mimeType?:string) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
+    getThumbnail(libraryItem: LibraryItem, success: (data: Blob|string, mimeType?:string) => void, error: (err: any) => void, options?: GetThumbnailOptions): void;
 
     getPhoto(photoId: string, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
     getPhoto(libraryItem: LibraryItem, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
@@ -45,11 +46,22 @@ declare module PhotoLibraryCordova {
     latitude?: number;
     longitude?: number;
     albumIds?: string[];
+    // extras
+    speed?: number;
+    isFavorite?: boolean;
+    burstIdentifier: string;
+    representsBurst: boolean;
+    duration: number;
   }
 
   export interface AlbumItem {
     id: string;
     title: string;
+    // extras
+    location?: string;
+    startDate?: Date;
+    endDate?: Date;
+    itemIds: string[];
   }
 
   export interface GetLibraryOptions {
@@ -66,6 +78,12 @@ declare module PhotoLibraryCordova {
     maxItems?: number;
   }
 
+  export interface GetMomentsOptions {
+    // date string, e.g. "2108-01-01"
+    from: string;
+    to: string
+  }
+
   export interface RequestAuthorizationOptions {
     read?: boolean;
     write?: boolean;
@@ -75,6 +93,7 @@ declare module PhotoLibraryCordova {
     thumbnailWidth?: number;
     thumbnailHeight?: number;
     quality?: number;
+    dataURL?: boolean;
   }
 
   export interface GetPhotoOptions {

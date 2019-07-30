@@ -6,6 +6,7 @@ import Foundation
     static let DEFAULT_WIDTH = "512"
     static let DEFAULT_HEIGHT = "384"
     static let DEFAULT_QUALITY = "0.5"
+    static let DEFAULT_DATAURL = "false"
     
     lazy var concurrentQueue: OperationQueue = {
         var queue = OperationQueue()
@@ -74,14 +75,25 @@ import Foundation
                         self.sendErrorResponse(404, error: "Incorrect 'quality' query parameter")
                         return
                     }
+
+                    let dataURLStr = queryItems?.filter({$0.name == "dataURL"}).first?.value ?? PhotoLibraryProtocol.DEFAULT_DATAURL
+                    let dataURL = Bool(dataURLStr)
                     
                     concurrentQueue.addOperation {
-                        service.getThumbnail(photoId!, thumbnailWidth: width!, thumbnailHeight: height!, quality: quality!) { (imageData) in
+                        service.getThumbnail(photoId!, thumbnailWidth: width!, thumbnailHeight: height!, quality: quality!, dataURL: dataURL!) { (imageData) in
                             if (imageData == nil) {
                                 self.sendErrorResponse(404, error: PhotoLibraryService.PERMISSION_ERROR)
                                 return
                             }
-                            self.sendResponseWithResponseCode(200, data: imageData!.data, mimeType: imageData!.mimeType)
+                            if dataURL ?? false {
+                                let base64data = imageData!.data.base64EncodedString(options: .lineLength64Characters)
+                                let dataURL = ("data:"+imageData!.mimeType+";base64,"+base64data).data(using: String.Encoding.ascii)
+                                self.sendResponseWithResponseCode(200, data: dataURL!, mimeType: imageData!.mimeType)
+                            }
+                            else {
+                                self.sendResponseWithResponseCode(200, data: imageData!.data, mimeType: imageData!.mimeType)
+                                
+                            }
                         }
                     }
                     

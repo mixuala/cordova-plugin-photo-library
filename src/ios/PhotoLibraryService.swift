@@ -26,6 +26,56 @@ extension PHAsset {
 
 }
 
+// see: https://github.com/terikon/cordova-plugin-photo-library/issues/146
+extension UIImage {
+    
+    func fixedOrientation() -> UIImage {
+        if imageOrientation == .up {
+            return self
+        }
+        var transform: CGAffineTransform = CGAffineTransform.identity
+        switch imageOrientation {
+        case .down, .downMirrored:
+            transform = transform.translatedBy(x: size.width, y: size.height)
+            transform = transform.rotated(by: CGFloat(Double.pi ))
+            break
+        case .left, .leftMirrored:
+            transform = transform.translatedBy(x: size.width, y: 0)
+            transform = transform.rotated(by: CGFloat(Double.pi / 2))
+            break
+        case .right, .rightMirrored:
+            transform = transform.translatedBy(x: 0, y: size.height)
+            transform = transform.rotated(by: CGFloat(-Double.pi / 2))
+            break
+        case .up, .upMirrored:
+            break
+        }
+        switch imageOrientation {
+        case .upMirrored, .downMirrored:
+            transform.translatedBy(x: size.width, y: 0)
+            transform.scaledBy(x: -1, y: 1)
+            break
+        case .leftMirrored, .rightMirrored:
+            transform.translatedBy(x: size.height, y: 0)
+            transform.scaledBy(x: -1, y: 1)
+        case .up, .down, .left, .right:
+            break
+        }
+        let ctx: CGContext = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: self.cgImage!.bitsPerComponent, bytesPerRow: 0, space: (self.cgImage?.colorSpace)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.concatenate(transform)
+        switch imageOrientation {
+        case .left, .leftMirrored, .right, .rightMirrored:
+            ctx.draw(self.cgImage!, in: CGRect(x: 0, y: 0, width: size.height, height: size.width))
+            break
+        default:
+            ctx.draw(self.cgImage!, in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+            break
+        }
+        let cgImage: CGImage = ctx.makeImage()!
+        return UIImage(cgImage: cgImage)
+    }
+}
+
 final class PhotoLibraryService {
 
     let fetchOptions: PHFetchOptions!
@@ -130,7 +180,19 @@ final class PhotoLibraryService {
             }
         }
 
+        if options.maxItems > 0 {
+            fetchOptions.fetchLimit = options.maxItems;
+        }
+
+        /**
+         * TODO: add fetch by dateRange, fetch by most_recent, and skip n records
+         */
+        
         let fetchResult = PHAsset.fetchAssets(with: fetchOptions)
+
+        /**
+         * TODO: add PHAsset.fetchAssetsByIds to get LibraryItems from an Album
+         */
 
 
 
@@ -192,11 +254,11 @@ final class PhotoLibraryService {
         }
         return "application/octet-stream"
     }
-
-
-    func getCompleteInfo(_ libraryItem: NSDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
-
-
+    
+    
+    func getCompleteInfo(_ libraryItem: NSMutableDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
+        
+        
         let ident = libraryItem.object(forKey: "id") as! String
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [ident], options: self.fetchOptions)
         if fetchResult.count == 0 {
@@ -220,6 +282,19 @@ final class PhotoLibraryService {
                         completion(nil)
                     }
                     else {
+                        // https://stackoverflow.com/questions/45277034/get-exif-metadata-in-of-captured-image-in-swift3
+                        let imageNSData: NSData = imageData! as NSData
+                        if let imageSource = CGImageSourceCreateWithData(imageNSData, nil) {
+                            let metadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil)! as NSDictionary
+                            libraryItem["orientation"] = metadata["Orientation"]
+                            libraryItem["{Exif}"] = metadata["{Exif}"]
+                            libraryItem["{GPS}"] = metadata["{GPS}"]
+                            libraryItem["{TIFF}"] = metadata["{TIFF}"]
+                            // print("metadata: ", libraryItem)
+                        }
+                        
+
+
                         let file_url:URL = info!["PHImageFileURLKey"] as! URL
 //                        let mime_type = self.mimeTypes[file_url.pathExtension.lowercased()]!
                         completion(file_url.relativePath)
@@ -268,9 +343,18 @@ final class PhotoLibraryService {
         if let location = asset.location {
             libraryItem["latitude"] = location.coordinate.latitude
             libraryItem["longitude"] = location.coordinate.longitude
+            // extras
+            libraryItem["speed"] = location.speed
         }
 
+        // extras
+        libraryItem["isFavorite"] = asset.isFavorite
+        libraryItem["burstIdentifier"] = asset.burstIdentifier
+        libraryItem["representsBurst"] = asset.representsBurst
+        libraryItem["duration"] = asset.duration
 
+        
+        
         if includeAlbumData {
             // This is pretty slow, use only when needed
             var assetCollectionIds = [String]()
@@ -311,7 +395,104 @@ final class PhotoLibraryService {
 
     }
 
-    func getThumbnail(_ photoId: String, thumbnailWidth: Int, thumbnailHeight: Int, quality: Float, completion: @escaping (_ result: PictureData?) -> Void) {
+    func getMoments(fromDate: Date? = nil, toDate: Date? = nil) -> [NSDictionary] {
+        
+        var result = [NSDictionary]()
+        
+        for assetCollectionType in [PHAssetCollectionType.moment] {
+
+            let fetchResult = PHAssetCollection.fetchAssetCollections(with: assetCollectionType, subtype: .any, options: nil)
+            
+            fetchResult.enumerateObjects({ (assetCollection: PHAssetCollection, index, stop) in
+                let albumItem = NSMutableDictionary()
+                // filter by date range
+
+                // filter by date range
+                if fromDate != nil {
+                    guard let startDate = assetCollection.startDate, fromDate!.compare(startDate) != ComparisonResult.orderedDescending
+                        else {
+                            return
+                    }
+                }
+                if toDate != nil {
+                    guard let endDate = assetCollection.endDate, toDate!.compare(endDate) != ComparisonResult.orderedAscending
+                        else {
+                            return
+                    }
+                }
+
+                guard assetCollection.localizedLocationNames.count > 0 else {
+                    return
+                }    
+                                
+                albumItem["id"] = assetCollection.localIdentifier
+                albumItem["title"] = assetCollection.localizedTitle
+
+                // additions
+                albumItem["locations"] = assetCollection.localizedLocationNames.joined(separator: ", ")
+                albumItem["startDate"] = self.dateFormatter.string(from: assetCollection.startDate!)
+                albumItem["endDate"] = self.dateFormatter.string(from: assetCollection.endDate!)
+
+
+                // get PHAsset ids in moment
+                var assetIds = [String]()            
+                let assetOptions = PHFetchOptions()
+                assetOptions.sortDescriptors = [ NSSortDescriptor(key: "creationDate", ascending: false) ]
+                let assets = PHAsset.fetchAssets(in: assetCollection, options: assetOptions)
+                assets.enumerateObjects({ (asset: PHAsset, index, stop) in
+                    assetIds.append(asset.localIdentifier)
+                })
+                albumItem["itemIds"] = assetIds
+
+                result.append(albumItem)
+                
+            });
+            
+        }
+        
+        return result;
+        
+    }
+
+    // // https://stackoverflow.com/questions/32041420/cropping-image-with-swift-and-put-it-on-center-position
+    // // TODO: width/height must be adjusted for Orientation
+    // // currently using: contentMode = PHImageContentMode.aspectFill 
+    // func centerCropToBounds(image: UIImage, width: Double, height: Double) -> UIImage {
+
+    //     let contextImage: UIImage = UIImage(cgImage: image.cgImage!)
+
+    //     let contextSize: CGSize = contextImage.size
+
+    //     var posX: CGFloat = 0.0
+    //     var posY: CGFloat = 0.0
+    //     var cgwidth: CGFloat = CGFloat(width)
+    //     var cgheight: CGFloat = CGFloat(height)
+
+    //     // See what size is longer and create the center off of that
+    //     if contextSize.width > contextSize.height {
+    //         posX = ((contextSize.width - contextSize.height) / 2)
+    //         posY = 0
+    //         cgwidth = contextSize.height
+    //         cgheight = contextSize.height
+    //     } else {
+    //         posX = 0
+    //         posY = ((contextSize.height - contextSize.width) / 2)
+    //         cgwidth = contextSize.width
+    //         cgheight = contextSize.width
+    //     }
+
+    //     let rect: CGRect = CGRectMake(posX, posY, cgwidth, cgheight)
+
+    //     // Create bitmap image from context using the rect
+    //     let imageRef: CGImageRef = CGImageCreateWithImageInRect(contextImage.CGImage, rect)
+
+    //     // Create a new image based on the imageRef and rotate back to the original orientation
+    //     let image: UIImage = UIImage(CGImage: imageRef, scale: image.scale, orientation: image.imageOrientation)!
+
+    //     return image
+    // }
+    
+    func getThumbnail(_ photoId: String, thumbnailWidth: Int, thumbnailHeight: Int, quality: Float, dataURL:Bool, completion: @escaping (_ result: PictureData?) -> Void) {
 
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: self.fetchOptions)
 
@@ -325,16 +506,29 @@ final class PhotoLibraryService {
 
             let asset = obj as! PHAsset
 
+            /*
+             * targetSize and options.normalizedCropRect, or scale in js and provide exact size.  
+             * TODO: check if 80x80 square targetSize crops from middle or topLeft
+             *  https://developer.apple.com/documentation/photokit/phimagerequestoptionsresizemode
+             *  https://developer.apple.com/documentation/photokit/phimagerequestoptions/1616952-normalizedcroprect
+             *  https://stackoverflow.com/questions/32041420/cropping-image-with-swift-and-put-it-on-center-position
+            */
+
             self.cachingImageManager.requestImage(for: asset, targetSize: CGSize(width: thumbnailWidth, height: thumbnailHeight), contentMode: self.contentMode, options: self.thumbnailRequestOptions) {
                 (image: UIImage?, imageInfo: [AnyHashable: Any]?) in
 
+                // TODO: confirm auto-rotate is working properly
                 guard let image = image else {
                     completion(nil)
                     return
                 }
 
-                let imageData = PhotoLibraryService.image2PictureData(image, quality: quality)
-
+                //TODO: may need to adjust targetSize BEFORE calling fixedOrientation()
+                var imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality)
+                // if dataURL {
+                //     let base64data = imageData!.data?.base64EncodedString(options: .lineLength64Characters)
+                //     imageData = PictureData(data: imageData!.data, dataURL: base64data, mimeType: imageData!.mimeType)
+                // }
                 completion(imageData)
             }
         })
@@ -342,14 +536,11 @@ final class PhotoLibraryService {
     }
 
     func getPhoto(_ photoId: String, completion: @escaping (_ result: PictureData?) -> Void) {
-
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: self.fetchOptions)
-
         if fetchResult.count == 0 {
             completion(nil)
             return
         }
-
         fetchResult.enumerateObjects({
             (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
 
@@ -357,14 +548,13 @@ final class PhotoLibraryService {
 
             PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
                 (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
-
+                
                 guard let image = imageData != nil ? UIImage(data: imageData!) : nil else {
                     completion(nil)
                     return
                 }
-
-                let imageData = PhotoLibraryService.image2PictureData(image, quality: 1.0)
-
+                
+                let imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: 1.0)
                 completion(imageData)
             }
         })
@@ -451,6 +641,7 @@ final class PhotoLibraryService {
                 do {
                     let video_data = try Data(contentsOf: url)
                     let pic_data = PictureData(data: video_data, mimeType: "video/quicktime") // TODO: get mime from info dic ?
+                    // let pic_data = PictureData(data: video_data, dataURL:nil, mimeType: "video/quicktime") // TODO: get mime from info dic ?
                     completion(pic_data)
                 }
                 catch _ {
@@ -649,6 +840,8 @@ final class PhotoLibraryService {
 
     struct PictureData {
         var data: Data
+        // var data: Data? = nil
+        // var dataURL: String? = nil
         var mimeType: String
     }
 
@@ -732,11 +925,12 @@ final class PhotoLibraryService {
             mimeType = data != nil ? "image/png" : nil
         } else {
             data = UIImageJPEGRepresentation(image, CGFloat(quality))
-            mimeType = data != nil ? "image/jpeg" : nil
+            mimeType = data != nil ? "image/jpeg" : nil        
         }
 
         if data != nil && mimeType != nil {
             return PictureData(data: data!, mimeType: mimeType!)
+            // return PictureData(data: data!, dataURL:nil, mimeType: mimeType!)
         }
         return nil
     }
