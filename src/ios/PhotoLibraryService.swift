@@ -179,6 +179,11 @@ final class PhotoLibraryService {
                                                      PHAssetMediaType.video.rawValue)
             }
         }
+
+        if options.maxItems > 0 {
+            fetchOptions.fetchLimit = options.maxItems;
+        }
+
         
         let fetchResult = PHAsset.fetchAssets(with: fetchOptions)
 

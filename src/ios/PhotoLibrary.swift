@@ -36,6 +36,7 @@ import Foundation
             let thumbnailWidth = options["thumbnailWidth"] as! Int
             let thumbnailHeight = options["thumbnailHeight"] as! Int
             let itemsInChunk = options["itemsInChunk"] as! Int
+            let maxItems = options["maxItems"] as! Int
             let chunkTimeSec = options["chunkTimeSec"] as! Double
             let useOriginalFileNames = options["useOriginalFileNames"] as! Bool
             let includeAlbumData = options["includeAlbumData"] as! Bool
@@ -55,6 +56,7 @@ import Foundation
             let getLibraryOptions = PhotoLibraryGetLibraryOptions(thumbnailWidth: thumbnailWidth,
                                                                   thumbnailHeight: thumbnailHeight,
                                                                   itemsInChunk: itemsInChunk,
+                                                                  maxItems: maxItems,
                                                                   chunkTimeSec: chunkTimeSec,
                                                                   useOriginalFileNames: useOriginalFileNames,
                                                                   includeImages: includeImages,

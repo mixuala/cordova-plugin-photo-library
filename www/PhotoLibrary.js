@@ -23,6 +23,7 @@ photoLibrary.getLibrary = function (success, error, options) {
     thumbnailHeight: options.thumbnailHeight || defaultThumbnailHeight,
     quality: options.quality || defaultQuality,
     itemsInChunk: options.itemsInChunk || 0,
+    maxItems: options.maxItems || 0,
     chunkTimeSec: options.chunkTimeSec || 0,
     useOriginalFileNames: options.useOriginalFileNames || false,
     includeImages: options.includeImages !== undefined ? options.includeImages : true,
