@@ -19,6 +19,7 @@ import Foundation
 
 
     // Will sort by creation date
+    @objc
     func getLibrary(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
 
@@ -76,6 +77,7 @@ import Foundation
         }
     }
     
+    @objc
     func getAlbums(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
             
@@ -95,7 +97,7 @@ import Foundation
         }
     }
 
-    
+    @objc
     func getMoments(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
             
@@ -131,7 +133,7 @@ import Foundation
         }
     }    
     
-    
+    @objc
     func isAuthorized(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: PhotoLibraryService.hasPermission())
@@ -139,7 +141,7 @@ import Foundation
         }
     }
     
-    
+    @objc
     func getThumbnail(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
 
@@ -178,6 +180,7 @@ import Foundation
         }
     }
 
+    @objc
     func getPhoto(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
 
@@ -208,6 +211,7 @@ import Foundation
         }
     }
 
+    @objc
     func getLibraryItem(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
             
@@ -241,7 +245,7 @@ import Foundation
 
     }
     
-    
+    @objc
     func stopCaching(_ command: CDVInvokedUrlCommand) {
 
         let service = PhotoLibraryService.instance
@@ -253,6 +257,7 @@ import Foundation
 
     }
 
+    @objc
     func requestAuthorization(_ command: CDVInvokedUrlCommand) {
 
         let service = PhotoLibraryService.instance
@@ -267,6 +272,7 @@ import Foundation
 
     }
 
+    @objc
     func saveImage(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
 
@@ -294,6 +300,7 @@ import Foundation
         }
     }
 
+    @objc
     func saveVideo(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
 

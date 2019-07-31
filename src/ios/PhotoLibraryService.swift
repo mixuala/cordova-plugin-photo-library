@@ -255,7 +255,6 @@ final class PhotoLibraryService {
         return "application/octet-stream"
     }
     
-    
     func getCompleteInfo(_ libraryItem: NSMutableDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
         
         
@@ -560,7 +559,6 @@ final class PhotoLibraryService {
         })
     }
 
-
     func getLibraryItem(_ itemId: String, mimeType: String, completion: @escaping (_ base64: String?) -> Void) {
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [itemId], options: self.fetchOptions)
         if fetchResult.count == 0 {
@@ -684,7 +682,7 @@ final class PhotoLibraryService {
         }
 
         // Permission was manually denied by user, open settings screen
-        let settingsUrl = URL(string: UIApplicationOpenSettingsURLString)
+        let settingsUrl = URL(string: UIApplication.openSettingsURLString)
         if let url = settingsUrl {
             UIApplication.shared.openURL(url)
             // TODO: run callback only when return ?
@@ -855,13 +853,14 @@ final class PhotoLibraryService {
             }
         }
     }
-
+    
     fileprivate func getDataFromURL(_ url: String) throws -> Data {
         if url.hasPrefix("data:") {
 
             guard let match = self.dataURLPattern.firstMatch(in: url, options: NSRegularExpression.MatchingOptions(rawValue: 0), range: NSMakeRange(0, url.characters.count)) else { // TODO: firstMatchInString seems to be slow for unknown reason
                 throw PhotoLibraryError.error(description: "The dataURL could not be parsed")
             }
+//            let dataPos = match.rangeAt(0).length
             let dataPos = match.range(at: 0).length
             let base64 = (url as NSString).substring(from: dataPos)
             guard let decoded = Data(base64Encoded: base64, options: NSData.Base64DecodingOptions(rawValue: 0)) else {
@@ -921,11 +920,11 @@ final class PhotoLibraryService {
         var mimeType: String?
 
         if (imageHasAlpha(image)){
-            data = UIImagePNGRepresentation(image)
+            data = image.pngData()
             mimeType = data != nil ? "image/png" : nil
         } else {
-            data = UIImageJPEGRepresentation(image, CGFloat(quality))
-            mimeType = data != nil ? "image/jpeg" : nil        
+            data = image.jpegData(compressionQuality: CGFloat(quality))
+            mimeType = data != nil ? "image/jpeg" : nil
         }
 
         if data != nil && mimeType != nil {
