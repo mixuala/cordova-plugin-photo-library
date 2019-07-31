@@ -48,6 +48,182 @@ Add cdvphotolibrary protocol to Content-Security-Policy, like this:
 
 For remarks about angular/ionic usage, see below.
 
+## Mappi extensions
+
+The following extensions were added, mostly to support extended functionality on `platform=ios`.
+
+### Added extended attributes for `platform=ios`:
+
+```js
+export interface IosLibraryItem extends LibraryItem {
+    orientation?: number;
+    "{Exif}"?: any;
+    "{GPS}"?: any;
+    "{TIFF}"?: any;
+    speed?: number;
+    isFavorite?: boolean;
+    burstIdentifier?: string;
+    representsBurst?: boolean;
+    duration?: number;
+  }
+```
+
+```js
+// example output from the ios simulator
+const data:LibraryItem = {
+  "id": "CC95F08C-88C3-4012-9D6D-64A413D254B3/L0/001",
+  "speed": 0.5513811087502415,
+  "fileName": "IMG_0006.HEIC",
+  "orientation": 3,
+  "{Exif}": {
+    "DateTimeOriginal": "2018:03:30 12:14:19",
+    "MeteringMode": 5,
+    "ComponentsConfiguration": [
+      1,
+      2,
+      3,
+      0
+    ],
+    "BrightnessValue": 8.455294117647059,
+    "FocalLenIn35mmFilm": 52,
+    "LensMake": "Apple",
+    "FNumber": 2.4,
+    "FocalLength": 6,
+    "ShutterSpeedValue": 7.704253214638971,
+    "SubjectArea": [
+      2007,
+      1503,
+      2209,
+      1327
+    ],
+    "ApertureValue": 2.5260688216892597,
+    "SceneType": 1,
+    "SceneCaptureType": 0,
+    "ColorSpace": 65535,
+    "LensModel": "iPhone X back dual camera 6mm f/2.4",
+    "LensSpecification": [
+      4,
+      6,
+      1.7999999523162842,
+      2.4000000953674316
+    ],
+    "PixelYDimension": 3024,
+    "WhiteBalance": 0,
+    "FlashPixVersion": [
+      1,
+      0
+    ],
+    "DateTimeDigitized": "2018:03:30 12:14:19",
+    "ISOSpeedRatings": [
+      16
+    ],
+    "ExposureMode": 0,
+    "ExifVersion": [
+      2,
+      2,
+      1
+    ],
+    "PixelXDimension": 4032,
+    "CustomRendered": 2,
+    "ExposureProgram": 2,
+    "ExposureTime": 0.004784688995215311,
+    "SubsecTimeDigitized": "365",
+    "Flash": 16,
+    "SubsecTimeOriginal": "365",
+    "SensingMethod": 2,
+    "ExposureBiasValue": 0
+  },
+  "isFavorite": false,
+  "mimeType": "image/heic",
+  "longitude": -122.50956666666667,
+  "width": 4032,
+  "latitude": 37.76007833333333,
+  "{GPS}": {
+    "ImgDirection": 62.766961651917406,
+    "LatitudeRef": "N",
+    "HPositioningError": 6.00090661831369,
+    "DestBearingRef": "M",
+    "Latitude": 37.76007833333333,
+    "Speed": 0.5513811087502415,
+    "TimeStamp": "19:14:18",
+    "LongitudeRef": "W",
+    "AltitudeRef": 0,
+    "Longitude": 122.50956666666667,
+    "Altitude": 4.583391486392184,
+    "DateStamp": "2018:03:30",
+    "DestBearing": 62.766961651917406,
+    "ImgDirectionRef": "M",
+    "SpeedRef": "K"
+  },
+  "{TIFF}": {
+    "ResolutionUnit": 2,
+    "Software": "12.0",
+    "TileLength": 512,
+    "DateTime": "2018:03:30 12:14:19",
+    "XResolution": 72,
+    "TileWidth": 512,
+    "Orientation": 3,
+    "YResolution": 72,
+    "Model": "iPhone X",
+    "Make": "Apple"
+  },
+  "representsBurst": false,
+  "height": 3024,
+  "filePath": "/Users/username/Library/Developer/CoreSimulator/Devices/A5CF5DA3-346A-46B8-B892-D4696F66B276/data/Media/DCIM/100APPLE/IMG_0006.HEIC",
+  "duration": 0,
+  "creationDate": "2018-03-30T19:14:19.365Z",
+  "thumbnailURL": "cdvphotolibrary://thumbnail?photoId=CC95F08C-88C3-4012-9D6D-64A413D254B3%2FL0%2F001&width=80&height=80&quality=0.5",
+  "photoURL": "cdvphotolibrary://photo?photoId=CC95F08C-88C3-4012-9D6D-64A413D254B3%2FL0%2F001"
+}
+```
+
+### Get `PHAssetCollectionType.moment` from library
+
+```js
+cordova.plugins.photoLibrary.getMoments(
+  success: (result: AlbumItem[]) => void, 
+  error: (err:any) => void, 
+  options?:GetMomentsOptions
+): void;
+
+// example output from the ios simulator
+const data:AlbumItem = {
+  "id": "ACBADA72-0E97-4AE0-AA81-4CEEEA9191DC/L0/060",
+  "title": "San Francisco, CA",
+  "startDate": "2018-03-31T03:14:19.365+08:00",
+  "endDate": "2018-03-31T03:14:19.365+08:00",
+  "locations": "Great Hwy",
+  "itemIds": [
+    "CC95F08C-88C3-4012-9D6D-64A413D254B3/L0/001"
+  ],
+  "loc": [
+    37.76007833333333,
+    122.50956666666661
+  ],
+  "label": "San Francisco, CA",
+  "begins": "Sat Mar 31 2018",
+  "days": 0,
+  "count": 1
+}
+```
+
+### Auto-rotate images from library using Orientation patch
+
+auto-rotate images from `getPhoto()` or `getThumbnail()`
+
+> see: https://github.com/terikon/cordova-plugin-photo-library/issues/146#issuecomment-427540942
+
+
+### Add support for queryparam `dataURL=true`
+
+```js
+// example url
+const url:string = `cdvphotolibrary://thumbnail?photoId=CC95F08C-88C3-4012-9D6D-64A413D254B3%2FL0%2F001&width=80&height=80&quality=0.5&dataURL=true`
+```
+
+
+
+
 ## Displaying photos
 
 ```js

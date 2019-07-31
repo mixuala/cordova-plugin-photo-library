@@ -46,12 +46,18 @@ declare module PhotoLibraryCordova {
     latitude?: number;
     longitude?: number;
     albumIds?: string[];
-    // extras
+  }
+
+  export interface IosLibraryItem extends LibraryItem {
+    orientation?: number;
+    "{Exif}"?: any;
+    "{GPS}"?: any;
+    "{TIFF}"?: any;
     speed?: number;
     isFavorite?: boolean;
-    burstIdentifier: string;
-    representsBurst: boolean;
-    duration: number;
+    burstIdentifier?: string;
+    representsBurst?: boolean;
+    duration?: number;
   }
 
   export interface AlbumItem {
