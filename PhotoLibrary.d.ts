@@ -1,4 +1,4 @@
-declare module PhotoLibraryCordova {
+export declare module PhotoLibraryCordova {
 
   export interface Plugin {
 
@@ -48,13 +48,29 @@ declare module PhotoLibraryCordova {
     albumIds?: string[];
   }
 
-  export interface IosLibraryItem extends LibraryItem {
+  export interface ExifLibraryItem extends LibraryItem {
     orientation?: number;
-    "{Exif}"?: any;
-    "{GPS}"?: any;
-    "{TIFF}"?: any;
-    speed?: number;
+    '{Exif}'?:{
+      DateTimeOriginal:string,
+      PixelXDimension:number,
+      PixelYDimension:number,
+    },
+    '{GPS}'?:{
+      Altitude: number,
+      Latitude: number,
+      Longitude: number,
+      Speed: number,
+    },
+    '{TIFF}'?:{
+      Artist:string,
+      Copyright:string,
+      Orientation:number,
+    },
     isFavorite?: boolean;
+  }
+
+  export interface IosLibraryItem extends ExifLibraryItem {
+    speed?: number;
     burstIdentifier?: string;
     representsBurst?: boolean;
     duration?: number;
