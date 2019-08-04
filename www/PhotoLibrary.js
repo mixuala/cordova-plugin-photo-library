@@ -213,9 +213,24 @@ photoLibrary.getPhoto = function (photoIdOrLibraryItem, success, error, options)
   if (!options) {
     options = {};
   }
+  
+  options = {
+    quality: options.quality || defaultQuality,
+    dataURL: options.dataURL || false,
+  };
 
   cordova.exec(
     function (data, mimeType) {
+      if (options.dataURL){
+        // var dataURL = 'data:'+mimeType+';base64,'+base64;
+        /**
+         * NOTE: not sure which is faster, convert in `ios` or here in `js`, 
+         * but I don't know how to return ArrayBuffer | String through Swift
+         */ 
+        // var dataURL = 'data:'+mimeType+';base64,'+btoa(String.fromCharCode(...new Uint8Array(data)));
+        var base64string = btoa(new Uint8Array(data).reduce((res,byte)=>(res.push(String.fromCharCode(byte)),res),[]).join(''));
+        return success(['data:', mimeType, ';base64,', base64string].join(''), mimeType);
+      }
       var blob = dataAndMimeTypeToBlob(data, mimeType);
       success(blob);
     },

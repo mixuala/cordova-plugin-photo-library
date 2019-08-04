@@ -102,7 +102,8 @@ import Foundation
                 } else if url.host?.lowercased() == "photo" {
                     
                     concurrentQueue.addOperation {
-                        service.getPhoto(photoId!) { (imageData) in
+                        let quality = Float(PhotoLibraryProtocol.DEFAULT_QUALITY)
+                        service.getPhoto(photoId!, quality: quality!) { (imageData) in
                             if (imageData == nil) {
                                 self.sendErrorResponse(404, error: PhotoLibraryService.PERMISSION_ERROR)
                                 return

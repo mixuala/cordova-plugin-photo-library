@@ -159,7 +159,7 @@ import Foundation
             let thumbnailHeight = options["thumbnailHeight"] as! Int
             let n = options["quality"] as! NSNumber
             let quality = n.floatValue>1.0 ? Float(n)/100 : Float(n)
-            let dataURL = options["dataURL"] as! Bool
+            let dataURL = options["dataURL"] as! Bool    // dataURL conversion happens in js
 
             service.getThumbnail(photoId, thumbnailWidth: thumbnailWidth, thumbnailHeight: thumbnailHeight, quality: quality, dataURL: dataURL) { (imageData) in
 
@@ -193,8 +193,13 @@ import Foundation
             let service = PhotoLibraryService.instance
 
             let photoId = command.arguments[0] as! String
+            let options = command.arguments[1] as! NSDictionary
+            let n = options["quality"] as! NSNumber
+            let quality = n.floatValue>1.0 ? Float(n)/100 : Float(n)
+            // let dataURL = options["dataURL"] as! Bool    // dataURL conversion happens in js
+            
 
-            service.getPhoto(photoId) { (imageData) in
+            service.getPhoto(photoId, quality: quality) { (imageData) in
                 
                 let pluginResult = imageData != nil ?
                     CDVPluginResult(

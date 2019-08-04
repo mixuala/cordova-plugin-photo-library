@@ -76,6 +76,11 @@ extension UIImage {
     }
 }
 
+
+/**
+ * TODO: getPhoto() automatically converts HEIC to JPG
+ *      - see: 
+ */
 final class PhotoLibraryService {
 
     let fetchOptions: PHFetchOptions!
@@ -100,6 +105,7 @@ final class PhotoLibraryService {
         "gif":  "image/gif",
         "jpg":  "image/jpeg",
         "jpeg": "image/jpeg",
+        "heic": "image/heic",
         "png":  "image/png",
         "tiff": "image/tiff",
         "tif":  "image/tiff"
@@ -534,7 +540,7 @@ final class PhotoLibraryService {
 
     }
 
-    func getPhoto(_ photoId: String, completion: @escaping (_ result: PictureData?) -> Void) {
+    func getPhoto(_ photoId: String, quality: Float, completion: @escaping (_ result: PictureData?) -> Void) {
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: self.fetchOptions)
         if fetchResult.count == 0 {
             completion(nil)
@@ -553,7 +559,7 @@ final class PhotoLibraryService {
                     return
                 }
                 
-                let imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: 1.0)
+                let imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality)
                 completion(imageData)
             }
         })
@@ -919,7 +925,7 @@ final class PhotoLibraryService {
         var data: Data?
         var mimeType: String?
 
-        if (imageHasAlpha(image)){
+        if (imageHasAlpha(image && false)){
             data = image.pngData()
             mimeType = data != nil ? "image/png" : nil
         } else {
