@@ -529,7 +529,7 @@ final class PhotoLibraryService {
                 }
 
                 //TODO: may need to adjust targetSize BEFORE calling fixedOrientation()
-                var imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality)
+                var imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality, mimeType: "image/jpeg")
                 // if dataURL {
                 //     let base64data = imageData!.data?.base64EncodedString(options: .lineLength64Characters)
                 //     imageData = PictureData(data: imageData!.data, dataURL: base64data, mimeType: imageData!.mimeType)
@@ -540,7 +540,7 @@ final class PhotoLibraryService {
 
     }
 
-    func getPhoto(_ photoId: String, quality: Float, completion: @escaping (_ result: PictureData?) -> Void) {
+    func getPhoto(_ photoId: String, quality: Float, mimeType: String, completion: @escaping (_ result: PictureData?) -> Void) {
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: self.fetchOptions)
         if fetchResult.count == 0 {
             completion(nil)
@@ -559,7 +559,7 @@ final class PhotoLibraryService {
                     return
                 }
                 
-                let imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality)
+                let imageData = PhotoLibraryService.image2PictureData(image.fixedOrientation(), quality: quality, mimeType: mimeType)
                 completion(imageData)
             }
         })
@@ -916,7 +916,7 @@ final class PhotoLibraryService {
 
     }
 
-    fileprivate static func image2PictureData(_ image: UIImage, quality: Float) -> PictureData? {
+    fileprivate static func image2PictureData(_ image: UIImage, quality: Float, mimeType: String) -> PictureData? {
         //        This returns raw data, but mime type is unknown. Anyway, crodova performs base64 for messageAsArrayBuffer, so there's no performance gain visible
         //        let provider: CGDataProvider = CGImageGetDataProvider(image.CGImage)!
         //        let data = CGDataProviderCopyData(provider)
@@ -925,10 +925,12 @@ final class PhotoLibraryService {
         var data: Data?
         var mimeType: String?
 
-        if (imageHasAlpha(image && false)){
+        // if (imageHasAlpha(image && false)){
+        if (mimeType==="image/png") {
             data = image.pngData()
             mimeType = data != nil ? "image/png" : nil
         } else {
+            // default: return JPG
             data = image.jpegData(compressionQuality: CGFloat(quality))
             mimeType = data != nil ? "image/jpeg" : nil
         }

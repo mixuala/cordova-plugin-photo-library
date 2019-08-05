@@ -6,6 +6,7 @@ var defaultThumbnailWidth = 512; // optimal for android
 var defaultThumbnailHeight = 384; // optimal for android
 
 var defaultQuality = 0.5;
+var defaultMimeType = "image/jpeg";
 
 var isBrowser = cordova.platformId == 'browser';
 
@@ -208,16 +209,29 @@ photoLibrary.getThumbnail = function (photoIdOrLibraryItem, success, error, opti
 
 photoLibrary.getPhoto = function (photoIdOrLibraryItem, success, error, options) {
 
-  var photoId = typeof photoIdOrLibraryItem.id !== 'undefined' ? photoIdOrLibraryItem.id : photoIdOrLibraryItem;
-
   if (!options) {
     options = {};
   }
-  
+
+  var photoId;
+  if (typeof photoIdOrLibraryItem==="string") {
+    photoId = photoIdOrLibraryItem;
+  }
+  else {
+    photoId = photoIdOrLibraryItem.id;
+    if (photoIdOrLibraryItem.mimeType!=='image/png') {
+      // 'image/heic' => 'image/jpeg'
+      options.mimeType = options.mimeType || 'image/jpeg';
+    }
+  }
+
   options = {
     quality: options.quality || defaultQuality,
     dataURL: options.dataURL || false,
+    mimeType: options.mimeType || defaultMimeType,
   };
+
+  
 
   cordova.exec(
     function (data, mimeType) {

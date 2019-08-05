@@ -25,7 +25,7 @@ export declare module PhotoLibraryCordova {
 
     getPhoto(photoId: string, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
     getPhoto(libraryItem: LibraryItem, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
-    
+
     getLibraryItem(libraryItem: LibraryItem, success: (result: Blob) => void, error: (err: any) => void, options?: GetPhotoOptions): void;
 
     stopCaching(success: () => void, error: (err: any) => void): void;
@@ -122,6 +122,7 @@ export declare module PhotoLibraryCordova {
   export interface GetPhotoOptions {
     quality?: number;
     dataURL?: boolean;
+    mimeType?: string;
   }
 
 }

@@ -196,10 +196,11 @@ import Foundation
             let options = command.arguments[1] as! NSDictionary
             let n = options["quality"] as! NSNumber
             let quality = n.floatValue>1.0 ? Float(n)/100 : Float(n)
+            let mimeType = options["mimeType"] as! String
             // let dataURL = options["dataURL"] as! Bool    // dataURL conversion happens in js
             
 
-            service.getPhoto(photoId, quality: quality) { (imageData) in
+            service.getPhoto(photoId, quality: quality, mimeType:mimeType) { (imageData) in
                 
                 let pluginResult = imageData != nil ?
                     CDVPluginResult(
