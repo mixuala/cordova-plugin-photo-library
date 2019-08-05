@@ -103,7 +103,7 @@ import Foundation
                     
                     concurrentQueue.addOperation {
                         let quality = Float(PhotoLibraryProtocol.DEFAULT_QUALITY)
-                        service.getPhoto(photoId!, quality: quality!) { (imageData) in
+                        service.getPhoto(photoId!, quality: quality!, mimeType: "image/jpeg") { (imageData) in
                             if (imageData == nil) {
                                 self.sendErrorResponse(404, error: PhotoLibraryService.PERMISSION_ERROR)
                                 return

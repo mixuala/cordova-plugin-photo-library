@@ -47,6 +47,11 @@ export declare module PhotoLibraryCordova {
     latitude?: number;
     longitude?: number;
     albumIds?: string[];
+
+    // extras
+    filePath?: string;
+    src?: string;
+    thumbSrc?: string
   }
 
   export interface ExifLibraryItem extends LibraryItem {

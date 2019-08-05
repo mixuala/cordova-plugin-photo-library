@@ -926,7 +926,7 @@ final class PhotoLibraryService {
         var mimeType: String?
 
         // if (imageHasAlpha(image && false)){
-        if (mimeType==="image/png") {
+        if (mimeType=="image/png") {
             data = image.pngData()
             mimeType = data != nil ? "image/png" : nil
         } else {

@@ -240,6 +240,9 @@ photoLibrary.getPhoto = function (photoIdOrLibraryItem, success, error, options)
         /**
          * NOTE: not sure which is faster, convert in `ios` or here in `js`, 
          * but I don't know how to return ArrayBuffer | String through Swift
+         * - for swift, use (data:Data)!.base64EncodedString(), 
+         *  - see: PhotoLibraryService.getLibraryItem()
+         * 
          */ 
         // var dataURL = 'data:'+mimeType+';base64,'+btoa(String.fromCharCode(...new Uint8Array(data)));
         var base64string = btoa(new Uint8Array(data).reduce((res,byte)=>(res.push(String.fromCharCode(byte)),res),[]).join(''));
